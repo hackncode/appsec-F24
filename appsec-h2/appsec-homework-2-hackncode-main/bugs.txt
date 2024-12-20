@@ -1,0 +1,38 @@
+Attack 1: Cross-Site Scripting (XSS) Vulnerability
+
+Description: We found an XSS vulnerability in the director parameter of gift.html. This vulnerability allowed attackers to execute arbitrary scripts via a specially crafted URL like:
+
+buy.html?director=%3Cscript%3Ealert(hello)%3C/script%3E
+
+The problem was caused by the use of Django's safe filter, which disables the automatic HTML escaping for the director parameter. Specifically, in item-single.html, we had the line:
+
+<p>Endorsed by {{director|safe}}!</p>
+
+Fix: We removed the safe filter and changed the line to:
+
+<p>Endorsed by {{director}}!</p>
+
+This ensures that Django applies its default HTML escaping to the director value, effectively neutralizing any potential script injection attempts.
+
+Attack 2: Cross-Site Request Forgery (CSRF) Vulnerability
+
+Description: Another vulnerability we encountered was related to CSRF. A custom HTML page (called "CSRF Attack Script.html") was crafted to exploit the absence of CSRF protection. The page allowed an attacker to submit a form granting a gift card to the attacker's account ("test2") by bypassing form validation.
+
+Cause: The form submission process for generating gift cards lacked CSRF protection, making it possible for an attacker to perform actions on behalf of a user.
+
+Fix: We added Django's CSRF protection by including {% csrf_token %} in the forms in both gift.html and item-single.html (lines 79 and 80). Additionally, we decorated the associated view in views.py (line 114) with @csrf_protect. After these changes, when we attempted the attack again, it was blocked, resulting in a 404 error, confirming that CSRF protection was now effective.
+
+Attack 3: SQL Injection Vulnerability
+
+Description: We identified an SQL Injection vulnerability in use-card.html. By submitting a .gftcrd file containing a specially crafted signature, we were able to manipulate SQL queries to attempt to extract sensitive information, such as the hashed password for the "admin" user.
+
+Cause: This issue occurred because the SQL queries were not parameterized, allowing for arbitrary execution of injected payloads.
+
+Fix: To address this, we enclosed the signature variable in brackets and used a parameterized format in the SQL query within views.py. This prevents injected strings from being interpreted as executable code. After implementing this fix, testing the attack resulted in a ValueError without any data leak, confirming the fix's success.
+
+Attack 4: Code Injection Vulnerability
+
+Description: We discovered a direct use of the system() call in <LegacySite/extras.py>, which made it possible for attackers to inject and execute arbitrary commands on the server, posing a serious security risk.
+
+Fix: We replaced the direct system() call with a safer alternative that eliminates the reliance on external binaries for executing commands. By using a secure method, we mitigated the risk of unauthorized command execution, making the server significantly more resilient to such code injection attacks.
+
